@@ -1,0 +1,8 @@
+{
+  "name": "Ruchi Spots",
+  "description": "Discover authentic local food spots, track your culinary history, and earn Ruchi Points.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
