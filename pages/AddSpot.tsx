@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { FoodSpot, FoodType } from '../types';
 import { ICONS, COLORS, KERALA_DISTRICTS } from '../constants';
 
@@ -17,27 +17,20 @@ const AddSpot: React.FC<AddSpotProps> = ({ onBack, onSubmit, userId }) => {
     address: '',
     district: KERALA_DISTRICTS[0],
     area: '',
+    mapLink: '',
     foodTypes: [] as FoodType[],
   });
   const [images, setImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAddImage = () => {
-    const nextId = Math.floor(Math.random() * 1000);
-    const newImg = `https://images.unsplash.com/photo-${1504674900247 + nextId}-08c7d5000460?auto=format&fit=crop&w=800&q=80`;
-    setImages([...images, newImg]);
-  };
-
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
-
-  const toggleFoodType = (type: FoodType) => {
-    setFormData(prev => ({
-      ...prev,
-      foodTypes: prev.foodTypes.includes(type) 
-        ? prev.foodTypes.filter(t => t !== type)
-        : [...prev.foodTypes, type]
-    }));
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    (Array.from(files) as File[]).forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => setImages(prev => [...prev, reader.result as string].slice(0, 5));
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -45,169 +38,72 @@ const AddSpot: React.FC<AddSpotProps> = ({ onBack, onSubmit, userId }) => {
     if (formData.name && formData.speciality && formData.foodTypes.length > 0 && formData.area) {
       onSubmit({
         ...formData,
-        location: { lat: 10.8505, lng: 76.2711 }, // Mock Kerala Center
-        images: images.length > 0 ? images : [`https://source.unsplash.com/featured/?kerala,food,${formData.speciality}`],
+        location: { lat: 10.8505, lng: 76.2711 }, 
+        images: images.length > 0 ? images : [],
         addedBy: userId
       });
     } else {
-      alert("Please fill all mandatory fields including specific area.");
+      alert("Fill all fields.");
     }
   };
 
   return (
     <div className="h-full bg-white flex flex-col animate-in fade-in duration-500">
-      <div className="p-6 bg-white/90 backdrop-blur-md flex items-center justify-between sticky top-0 z-10 border-b border-slate-100">
-        <button onClick={onBack} className="text-slate-300 p-2 bg-slate-50 rounded-2xl active:scale-90 transition-all">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      <div className="p-3 bg-white/95 backdrop-blur-md flex items-center justify-between sticky top-0 z-10 border-b border-slate-100 shadow-sm">
+        <button onClick={onBack} className="text-slate-400 p-1.5 bg-slate-50 rounded-lg active:scale-90 transition-all">
+          <ICONS.ArrowLeft className="w-4 h-4" />
         </button>
-        <h2 className="text-lg font-black text-slate-900 uppercase tracking-widest">Contribute Spot</h2>
-        <div className="w-12" />
+        <h2 className="text-xs font-black text-slate-900 uppercase tracking-widest">New Spot</h2>
+        <div className="w-8" />
       </div>
 
-      <form onSubmit={handleFormSubmit} className="p-8 space-y-12 flex-1 overflow-y-auto pb-40 scrollbar-hide">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Gallery</label>
-            <span className="text-[10px] font-black text-[#065F46] uppercase tracking-widest">{images.length}/5</span>
-          </div>
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2">
-            <button 
-              type="button"
-              onClick={handleAddImage}
-              className="flex-shrink-0 w-36 h-36 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[40px] flex flex-col items-center justify-center text-[#065F46] hover:bg-[#065F46]/5 transition-all group shadow-sm active:scale-95"
-            >
-              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-              </div>
-              <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Add Photo</span>
+      <form onSubmit={handleFormSubmit} className="p-4 space-y-5 flex-1 overflow-y-auto pb-24 scrollbar-hide">
+        {/* Images - Compact */}
+        <div className="space-y-2">
+          <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Evidence ({images.length}/5)</label>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleFileChange} />
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="shrink-0 w-16 h-16 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-[#065F46] active:scale-95">
+              <ICONS.Add className="w-4 h-4" />
             </button>
             {images.map((img, i) => (
-              <div key={i} className="flex-shrink-0 w-36 h-36 relative group animate-in zoom-in duration-300">
-                <img src={img} className="w-full h-full object-cover rounded-[40px] shadow-2xl border-2 border-white" alt="preview" />
-                <button 
-                  type="button"
-                  onClick={() => removeImage(i)}
-                  className="absolute -top-2 -right-2 w-9 h-9 bg-white text-red-500 rounded-2xl shadow-xl flex items-center justify-center border-2 border-red-50 active:scale-75 transition-all"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                </button>
+              <div key={i} className="shrink-0 w-16 h-16 relative">
+                <img src={img} className="w-full h-full object-cover rounded-xl border border-slate-100" />
+                <button type="button" onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute -top-1 -right-1 w-4 h-4 bg-white text-red-500 rounded-full shadow-md flex items-center justify-center border border-red-50"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="space-y-10">
-            <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-2">District</label>
-                    <select 
-                        required
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl py-5 px-6 text-xs font-black text-slate-900 focus:ring-4 focus:ring-[#065F46]/5 focus:border-[#065F46] outline-none shadow-sm transition-all appearance-none uppercase tracking-widest"
-                        value={formData.district}
-                        onChange={e => setFormData(prev => ({ ...prev, district: e.target.value }))}
-                    >
-                        {KERALA_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                </div>
-                <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-2">Local Area</label>
-                    <input 
-                        type="text"
-                        required
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl py-5 px-6 text-xs font-black text-slate-900 focus:ring-4 focus:ring-[#065F46]/5 focus:border-[#065F46] outline-none shadow-sm placeholder:opacity-30 transition-all uppercase tracking-widest"
-                        placeholder="e.g. Fort Kochi"
-                        value={formData.area}
-                        onChange={e => setFormData(prev => ({ ...prev, area: e.target.value }))}
-                    />
-                </div>
-            </div>
-
-            <div className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-2">Spot Name</label>
-            <input 
-                type="text"
-                required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl py-5 px-6 text-sm font-black text-slate-900 focus:ring-4 focus:ring-[#065F46]/5 focus:border-[#065F46] outline-none shadow-sm placeholder:opacity-30 transition-all"
-                placeholder="The name of the eatery"
-                value={formData.name}
-                onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            />
-            </div>
-
-            <div className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-2">Must-Try Speciality</label>
-            <input 
-                type="text"
-                required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl py-5 px-6 text-sm font-black text-slate-900 focus:ring-4 focus:ring-[#065F46]/5 focus:border-[#065F46] outline-none shadow-sm placeholder:opacity-30 transition-all"
-                placeholder="e.g. Chemmeen Roast"
-                value={formData.speciality}
-                onChange={e => setFormData(prev => ({ ...prev, speciality: e.target.value }))}
-            />
-            </div>
-
-            <div className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-2">Vibe & Category</label>
-            <div className="flex flex-wrap gap-3">
-                {Object.values(FoodType).map(type => (
-                <button
-                    key={type}
-                    type="button"
-                    onClick={() => toggleFoodType(type)}
-                    className={`px-6 py-4 rounded-[24px] text-[10px] font-black transition-all border-2 uppercase tracking-widest ${
-                    formData.foodTypes.includes(type)
-                        ? 'bg-[#065F46] text-white border-[#065F46] shadow-xl translate-y-[-2px]'
-                        : 'bg-slate-50 text-slate-400 border-slate-50'
-                    }`}
-                >
-                    {type}
-                </button>
-                ))}
-            </div>
-            </div>
-
-            <div className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-2">Taste Story</label>
-            <textarea 
-                rows={4}
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-[40px] py-6 px-8 text-sm font-bold text-slate-900 focus:ring-4 focus:ring-[#065F46]/5 focus:border-[#065F46] outline-none shadow-sm placeholder:opacity-30 resize-none transition-all leading-relaxed"
-                placeholder="Share your culinary findings..."
-                value={formData.description}
-                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            />
-            </div>
-
-            <div className="space-y-4">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-2">Full Address</label>
-            <input 
-                type="text"
-                required
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl py-5 px-6 text-sm font-bold text-slate-900 focus:ring-4 focus:ring-[#065F46]/5 focus:border-[#065F46] outline-none shadow-sm placeholder:opacity-30 transition-all"
-                placeholder="House name, Street, Landmark"
-                value={formData.address}
-                onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))}
-            />
-            </div>
-        </div>
-
-        <div className="pt-8">
-          <div className="bg-[#065F46]/5 p-8 rounded-[48px] border-2 border-[#065F46]/10 mb-12 flex items-center space-x-6 animate-pulse">
-            <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-[#065F46] shadow-xl shadow-[#065F46]/10">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            </div>
-            <div className="flex-1">
-                <p className="text-[11px] font-black text-[#065F46] uppercase tracking-[0.2em] mb-1">Explorer Bonus</p>
-                <p className="text-[12px] text-slate-500 font-bold leading-relaxed">Verified spots grant <span className="text-[#065F46] font-black">+75 Points</span> and a <span className="text-[#065F46] font-black">Contributor Badge</span>!</p>
-            </div>
+        {/* Inputs - Compact */}
+        <div className="space-y-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+          <div className="grid grid-cols-1 gap-2">
+            <select required className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-[10px] font-black" value={formData.district} onChange={e => setFormData(p => ({...p, district: e.target.value}))}>
+              {KERALA_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+            <input required className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-[10px] font-bold uppercase" placeholder="Local Area" value={formData.area} onChange={e => setFormData(p => ({...p, area: e.target.value}))} />
+            <input required className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-[10px] font-black" placeholder="Shop Name" value={formData.name} onChange={e => setFormData(p => ({...p, name: e.target.value}))} />
+            <input required className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-[10px] font-bold" placeholder="Speciality" value={formData.speciality} onChange={e => setFormData(p => ({...p, speciality: e.target.value}))} />
           </div>
-          
-          <button 
-            type="submit"
-            className="w-full bg-[#065F46] text-white py-7 rounded-[40px] font-black text-lg shadow-2xl shadow-[#065F46]/30 active:scale-95 transition-all uppercase tracking-[0.3em] ring-8 ring-[#065F46]/5"
-          >
-            Submit for Verification
-          </button>
         </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Category</label>
+          <div className="flex flex-wrap gap-1.5">
+            {Object.values(FoodType).map(type => (
+              <button key={type} type="button" onClick={() => setFormData(p => ({...p, foodTypes: p.foodTypes.includes(type) ? p.foodTypes.filter(t => t !== type) : [...p.foodTypes, type]}))} className={`px-2.5 py-1 rounded-md text-[7px] font-black transition-all border uppercase tracking-widest ${formData.foodTypes.includes(type) ? 'bg-[#065F46] text-white border-[#065F46]' : 'bg-white text-slate-400 border-slate-100'}`}>
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <textarea rows={2} className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-[10px] font-medium resize-none" placeholder="Description..." value={formData.description} onChange={e => setFormData(p => ({...p, description: e.target.value}))} />
+          <input required className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-[10px] font-medium" placeholder="Full Address" value={formData.address} onChange={e => setFormData(p => ({...p, address: e.target.value}))} />
+        </div>
+
+        <button type="submit" className="w-full bg-[#065F46] text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg">Submit Spot</button>
       </form>
     </div>
   );

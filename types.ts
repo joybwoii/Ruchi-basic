@@ -55,6 +55,7 @@ export interface FoodSpot {
   avgRating: number;
   reviewCount: number;
   createdAt: number;
+  mapLink?: string; // Optional Google Maps link
 }
 
 export interface Review {

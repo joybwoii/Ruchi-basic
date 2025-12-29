@@ -2,9 +2,9 @@
 import { User, FoodSpot, Review, FoodType, GuideLevel } from '../types';
 
 export const mockUser: User = {
-  userId: 'user_fresh_001',
+  userId: 'user_fresh',
   name: 'New Explorer',
-  email: 'explorer@ruchispots.com',
+  email: '',
   profileImage: 'https://ui-avatars.com/api/?name=Explorer&background=065F46&color=fff',
   ruchiPoints: 0,
   guideLevel: GuideLevel.NEW_EXPLORER,
@@ -15,7 +15,6 @@ export const mockUser: User = {
   socialLinks: []
 };
 
-// Start from zero for a production-ready fresh state
 export const mockAuthors: Record<string, { points: number, level: GuideLevel }> = {};
 
 export const mockFoodSpots: FoodSpot[] = [];
